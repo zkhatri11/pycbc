@@ -965,6 +965,51 @@ def get_lm_f0tau(mass, spin, l, m, n=0, which='both'):
         out = out[0]
     return out
 
+def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
+    #returns frequency and damping time for JP geometry
+    #Only valid for n=0 modes
+    #f1 = 1.5251
+    #f2 = -1.1568
+    #f3 = 0.1292
+
+    #q1 = 0.7000
+    #q2 = 1.4187
+    #q3 = -0.4990
+    # convert to arrays
+    mass, spin,epsilon, l, m, n, input_is_array = ensurearray(
+        mass, spin,epsilon, l, m, n)
+    # we'll ravel the arrays so we can evaluate each parameter combination
+    # one at a a time
+    getf0 = which == 'both' or which == 'f0'
+    gettau = which == 'both' or which == 'tau'
+    out = []
+    if getf0:
+        f0s = pykerr.qnmfreq(mass, spin, l, m, n) + ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass))/lal.MTSUN_SI
+        out.append(formatreturn(f0s, input_is_array))
+    if gettau:
+        if epsilon==0.:
+            taus=pykerr.qnmtau(mass, spin, l, m, n)
+            out.append(formatreturn(taus, input_is_array))
+        else:
+            taus = pykerr.qnmtau(mass, spin, l, m, n) - ((1/(2.*numpy.pi*mass)*(2*n + 1)*epsilon*((spin)/(486.) + (16.*spin**2)/(2187.*numpy.sqrt(3))))/(lal.MTSUN_SI))**(-1)
+            out.append(formatreturn(taus, input_is_array))
+    if not (getf0 and gettau):
+        out = out[0]
+    return out
+    #f0=(((f1+f2*((1.-spin)**f3)))/(2.*numpy.pi*mass) + (l*epsilon*((1/(81.*np.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass))/lal.MTSUN_SI
+    #tau = (((1/(2.*numpy.pi*mass))*(((f1 + f2*((1.-spin)**f3))*numpy.pi)/(q1 + q2*((1-spin)**q3)) - epsilon*((spin)/(486.) + (16.*spin**2)/(2187.*numpy.sqrt(3))))/lal.MTSUN_SI))**(-1)
+    #return f0, tau
+
+def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
+    f0, tau = {}, {}
+    for lmn in modes:
+        key = '{}{}{}'
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            tmp_f0, tmp_tau = get_JP_lm_f0tau(mass, spin,epsilon, l, m, n)
+            f0[key.format(l, abs(m), n)] = tmp_f0
+            tau[key.format(l, abs(m), n)] = tmp_tau
+    return f0, tau
 
 def get_lm_f0tau_allmodes(mass, spin, modes):
     """Returns a dictionary of all of the frequencies and damping times for the
