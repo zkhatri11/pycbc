@@ -976,20 +976,18 @@ def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
     #q2 = 1.4187
     #q3 = -0.4990
     # convert to arrays
-    mass, spin,epsilon, l, m, n, input_is_array = ensurearray(
-        mass, spin,epsilon, l, m, n)
+    mass, spin, epsilon, l, m, n, input_is_array = ensurearray(
+        mass, spin, epsilon, l, m, n)
     # we'll ravel the arrays so we can evaluate each parameter combination
     # one at a a time
     getf0 = which == 'both' or which == 'f0'
     gettau = which == 'both' or which == 'tau'
     out = []
     if getf0:
-
         f0s = pykerr.qnmfreq(mass, spin, l, m, n) + ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass*lal.MTSUN_SI))
         out.append(formatreturn(f0s, input_is_array))
 
     if gettau:
-
         taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy.    sqrt(3))))/(mass*lal.MTSUN_SI)))
         out.append(formatreturn(taus, input_is_array))
         #if epsilon == 0. or spin == 0:
