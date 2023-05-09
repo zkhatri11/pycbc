@@ -987,13 +987,14 @@ def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
         f0s = pykerr.qnmfreq(mass, spin, l, m, n) + ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass*lal.MTSUN_SI))
         out.append(formatreturn(f0s, input_is_array))
     if gettau:
+        taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy.    sqrt(3))))/(mass*lal.MTSUN_SI)))
+        out.append(formatreturn(taus, input_is_array))
         #if epsilon == 0. or spin == 0:
         #    taus=pykerr.qnmtau(mass, spin, l, m, n)
         #    out.append(formatreturn(taus, input_is_array))
         #else:
             #taus = pykerr.qnmtau(mass, spin, l, m, n) - 2.*numpy.pi*mass*lal.MTSUN_SI*(1/epsilon)*(2*n + 1)*(1/((spin)/(486.) + spin**2*(16.)/(2187.*numpy.sqrt(3))))
-        taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) - ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy. sqrt(3))))/(mass*lal.MTSUN_SI)))
-        out.append(formatreturn(taus, input_is_array))
+        #taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy. sqrt(3))))/(mass*lal.MTSUN_SI)))
     if not (getf0 and gettau):
         out = out[0]
     return out
