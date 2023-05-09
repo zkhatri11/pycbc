@@ -397,6 +397,10 @@ class TDomainMassSpinRingdownGenerator(BaseGenerator):
         super(TDomainMassSpinRingdownGenerator, self).__init__(ringdown.get_td_from_final_mass_spin,
             variable_args=variable_args, **frozen_params)
 
+class TDomainMassSpinEpsRingdownGenerator(BaseGenerator):
+    def __init__(self, variable_args=(), **frozen_params):
+        super(TDomainMassSpinEpsRingdownGenerator, self).__init__(ringdown.get_td_from_final_mass_spin_eps,
+            variable_args=variable_args, **frozen_params)
 
 class TDomainFreqTauRingdownGenerator(BaseGenerator):
     """Uses ringdown.get_td_from_freqtau as a generator function to
