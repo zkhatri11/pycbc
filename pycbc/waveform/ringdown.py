@@ -276,6 +276,8 @@ def lm_tfinal(damping_times):
         for lmn in damping_times.keys():
             t_max[lmn] = qnm_time_decay(damping_times[lmn], 1./1000)
         t_final = max(t_max.values())
+    #elif damping_times==0:
+    #    t_final = qnm_time_decay(damping_times,1.)
     else:
         t_final = qnm_time_decay(damping_times, 1./1000)
     return t_final
@@ -296,6 +298,8 @@ def lm_deltat(freqs, damping_times):
         raise ValueError('Missing damping times.')
     elif isinstance(damping_times, dict) and not isinstance(freqs, dict):
         raise ValueError('Missing frequencies.')
+    #elif freqs==0:
+    #    delta_t = 1. / qnm_freq_decay(freqs,damping_times,1.)
     else:
         delta_t = 1. / qnm_freq_decay(freqs, damping_times, 1./1000)
 
@@ -319,6 +323,8 @@ def lm_ffinal(freqs, damping_times):
         raise ValueError('Missing damping times.')
     elif isinstance(damping_times, dict) and not isinstance(freqs, dict):
         raise ValueError('Missing frequencies.')
+    #elif damping_times == 0:
+    #    f_final = qnm_freq_decay(freqs, damping_times, 1.)
     else:
         f_final = qnm_freq_decay(freqs, damping_times, 1./1000)
     if f_final > max_freq:
@@ -336,6 +342,8 @@ def lm_deltaf(damping_times):
         for lmn in damping_times.keys():
             df[lmn] = 1. / qnm_time_decay(damping_times[lmn], 1./1000)
         delta_f = min(df.values())
+    #elif damping_times == 0:
+    #    delta_f = 1. / qnm_time_decay(damping_times, 1.)
     else:
         delta_f = 1. / qnm_time_decay(damping_times, 1./1000)
     return delta_f
@@ -350,6 +358,7 @@ def td_output_vector(freqs, damping_times, taper=False,
         delta_t = lm_deltat(freqs, damping_times)
     if not t_final:
         t_final = lm_tfinal(damping_times)
+
     kmax = int(t_final / delta_t) + 1
     # Different modes will have different tapering window-size
     # Find maximum window size to create long enough output vector
@@ -595,6 +604,8 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
         # amplitude
         if dbeta == 0:
             alm = alnm = amp
+        elif damping>0:
+            alm = alnm = 0
         else:
             beta = pi/4 + dbeta
             alm = 2**0.5 * amp * numpy.cos(beta)
