@@ -966,7 +966,6 @@ def get_lm_f0tau(mass, spin, l, m, n=0, which='both'):
     return out
 
 ####################### JP Ringdown Functions start #####################
-
 def func(y,spin,epsilon):
     com_term = common(y,spin,epsilon)# (9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
     if com_term !=None:
@@ -1014,7 +1013,7 @@ def IterativeFunc(ran_mx,spin,epsilon, prec):
     for i in range(len(ran_mx) -1):
         d = common(ran_mx[i],spin,epsilon)
         p = common(ran_mx[i+1],spin,epsilon)
-        if d is None or p is None:
+        if d == None or p == None:
             return None
         else:
             if(func(ran_mx[i],spin,epsilon)*func(ran_mx[i+1],spin,epsilon) < 0.):
@@ -1046,39 +1045,6 @@ def LR_pos(spin,epsilon):
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
     return Rpos
 
-def real_beta(spin,l):
-    if l == 2:
-        a1,a2,a3,a4,a5,a6 = 0.1282,0.4178,0.6711,0.5037,1.8331,0.7596
-    elif l == 3:
-        a1,a2,a3,a4,a5,a6 = 0.1801, 0.5007,0.7064,0.5704,1.4690,0.7302
-    elif l == 4:
-        a1,a2,a3,a4,a5,a6 = 0.1974, 0.4982, 0.6808, 0.5958,1.4380, 0.7102
-    elif l == 5:
-        a1,a2,a3,a4,a5,a6 = 0.2083,0.4762, 0.6524, 0.6167, 1.4615, 0.6937
-    elif l == 6:
-        a1,a2,a3,a4,a5,a6 = 0.2167, 0.4458, 0.6235, 0.6373, 1.5103, 0.6791
-    elif l == 7:
-        a1,a2,a3,a4,a5,a6 =0.2234, 0.4116, 0.5933, 0.6576, 1.5762, 0.6638
-        
-    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6))
-
-
-def im_beta(spin,l):
-    if l == 2:
-        a1,a2,a3,a4,a5,a6 = 0.1381,0.3131,0.5531,0.8492,2.2159,0.8544
-    elif l == 3:
-        a1,a2,a3,a4,a5,a6 = 0.1590,0.3706,0.6643,0.6460,1.8889,0.6676
-    elif l == 4:
-        a1,a2,a3,a4,a5,a6 = 0.1575,0.3478,0.6577,0.5840,1.9799,0.6032
-    elif l == 5:
-        a1,a2,a3,a4,a5,a6 = 0.1225,0.1993,0.4855,0.6313,3.1018,0.6150
-    elif l == 6:
-        a1,a2,a3,a4,a5,a6 = 0.1280,0.1947,0.5081,0.6556,3.0960,0.6434
-    elif l == 7:
-        a1,a2,a3,a4,a5,a6 = -15.333,15.482,0.0011,0.3347,6.6258,0.2974
-        
-    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6))
-
 def freqM_dim_less(spin,epsilon): 
     y = LR_pos(spin,epsilon)
     if y != None:
@@ -1086,8 +1052,8 @@ def freqM_dim_less(spin,epsilon):
 
     #     if com_term != None: 
         frequ = 2*((-3*epsilon*y + 8*epsilon + 2*y**3)/(8*epsilon*spin + 2*spin*y**3 + y**5*numpy.sqrt(com_term)))
-
-        return frequ + real_beta(spin,l)
+        
+        return frequ 
     return 100 
 
 
@@ -1166,17 +1132,17 @@ def gamma0(spin,epsilon):
         if (numerator/denominator) >= 0: 
 
             gam = freqM_dim_less(spin,epsilon)*numpy.sqrt(numerator/denominator) 
-
-            return -1*((gam/4) + im_beta(spin,l))
+            
+            return -1*(gam/4)
         return 100
     return 100
 
 def frequency_in_hertz(mass, spin, epsilon, l, m, n): 
     
-    return l*(freqM_dim_less(spin,epsilon))/(4*numpy.pi*mass*lal.MTSUN_SI) 
+    return l*(freqM_dim_less(spin,epsilon)+ real_beta(spin,l))/(4*numpy.pi*mass*lal.MTSUN_SI) 
 
 def damping_in_seconds(mass, spin, epsilon, l, m, n): 
-    return -1*(mass*lal.MTSUN_SI)/(gamma0(spin,epsilon))
+    return -1*(mass*lal.MTSUN_SI)/(gamma0(spin,epsilon)-im_beta(spin,l))
 
 def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
     mass, spin, l, m, n, input_is_array = ensurearray(
@@ -1187,10 +1153,10 @@ def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
     gettau = which == 'both' or which == 'tau'
     out = []
     if getf0:
-        f0s = frequency_in_hertz(mass,spin,epsilon, l, m, n)
+        f0s = frequency_in_hertz(mass,spin,epsilon, l, m, n) 
         out.append(formatreturn(f0s, input_is_array))
     if gettau:
-        taus = damping_in_seconds(mass,spin,epsilon, l, m, n)
+        taus = damping_in_seconds(mass,spin,epsilon, l, m, n) 
         out.append(formatreturn(taus, input_is_array))
     if not (getf0 and gettau):
         out = out[0]
@@ -1205,6 +1171,39 @@ def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
             f0[key.format(l, abs(m), n)] = tmp_f0
             tau[key.format(l, abs(m), n)] = tmp_tau
     return f0, tau
+
+def real_beta(spin,l):
+    if l == 2:
+        a1,a2,a3,a4,a5,a6 = 0.1282,0.4178,0.6711,0.5037,1.8331,0.7596
+    elif l == 3:
+        a1,a2,a3,a4,a5,a6 = 0.1801, 0.5007,0.7064,0.5704,1.4690,0.7302
+    elif l == 4:
+        a1,a2,a3,a4,a5,a6 = 0.1974, 0.4982, 0.6808, 0.5958,1.4380, 0.7102
+    elif l == 5:
+        a1,a2,a3,a4,a5,a6 = 0.2083,0.4762, 0.6524, 0.6167, 1.4615, 0.6937
+    elif l == 6:
+        a1,a2,a3,a4,a5,a6 = 0.2167, 0.4458, 0.6235, 0.6373, 1.5103, 0.6791
+    elif l == 7:
+        a1,a2,a3,a4,a5,a6 =0.2234, 0.4116, 0.5933, 0.6576, 1.5762, 0.6638
+        
+    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6))
+
+
+def im_beta(spin,l):
+    if l == 2:
+        a1,a2,a3,a4,a5,a6 = 0.1381,0.3131,0.5531,0.8492,2.2159,0.8544
+    elif l == 3:
+        a1,a2,a3,a4,a5,a6 = 0.1590,0.3706,0.6643,0.6460,1.8889,0.6676
+    elif l == 4:
+        a1,a2,a3,a4,a5,a6 = 0.1575,0.3478,0.6577,0.5840,1.9799,0.6032
+    elif l == 5:
+        a1,a2,a3,a4,a5,a6 = 0.1225,0.1993,0.4855,0.6313,3.1018,0.6150
+    elif l == 6:
+        a1,a2,a3,a4,a5,a6 = 0.1280,0.1947,0.5081,0.6556,3.0960,0.6434
+    elif l == 7:
+        a1,a2,a3,a4,a5,a6 = -15.333,15.482,0.0011,0.3347,6.6258,0.2974
+
+    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6))
 
 
 ####################### JP Ringdown Functions end   #####################
