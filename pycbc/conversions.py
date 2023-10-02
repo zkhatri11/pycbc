@@ -971,7 +971,7 @@ def func(y,spin,epsilon):
     com_term = common(y,spin,epsilon)# (9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
     if com_term !=None:
         unc = y**2* ( (9*epsilon**3*spin**2*y - 30*epsilon**3*spin**2 + 9*epsilon**2*spin**2*y**4 - 42*epsilon**2*spin**2*y**3 \
-                       - 4*epsilon**2*spin*y**4*np.sqrt(com_term)
+                       - 4*epsilon**2*spin*y**4*numpy.sqrt(com_term)
                        + 9*epsilon**2*y**6 - 48*epsilon**2*y**5 + 64*epsilon**2*y**4 - 12*epsilon*spin**2*y**6 
                        - 8*epsilon*spin*y**7*numpy.sqrt(com_term) 
                        - epsilon*y**9*(com_term)
