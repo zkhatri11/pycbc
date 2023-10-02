@@ -965,137 +965,203 @@ def get_lm_f0tau(mass, spin, l, m, n=0, which='both'):
         out = out[0]
     return out
 
-def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
-    #returns frequency and damping time for JP geometry
-    #Only valid for n=0 modes
-    #f1 = 1.5251
-    #f2 = -1.1568
-    #f3 = 0.1292
+####################### JP Ringdown Functions start #####################
 
-    #q1 = 0.7000
-    #q2 = 1.4187
-    #q3 = -0.4990
-    # convert to arrays
-    mass, spin, epsilon, l, m, n, input_is_array = ensurearray(
-        mass, spin, epsilon, l, m, n)
+def func(y,spin,epsilon):
+    com_term = common(y,spin,epsilon)# (9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
+    if com_term !=None:
+        unc = y**2* ( (9*epsilon**3*spin**2*y - 30*epsilon**3*spin**2 + 9*epsilon**2*spin**2*y**4 - 42*epsilon**2*spin**2*y**3 \
+                       - 4*epsilon**2*spin*y**4*np.sqrt(com_term)
+                       + 9*epsilon**2*y**6 - 48*epsilon**2*y**5 + 64*epsilon**2*y**4 - 12*epsilon*spin**2*y**6 
+                       - 8*epsilon*spin*y**7*numpy.sqrt(com_term) 
+                       - epsilon*y**9*(com_term)
+                       + 2*epsilon*y**8*(com_term) 
+                       - 12*epsilon*y**8 + 32*epsilon*y**7 
+                       - 4*spin*y**10*numpy.sqrt(com_term) 
+                       - y**12 * (com_term) 
+                       + 2*y**11 * (com_term) 
+                       + 4*y**10 
+                      )) 
+        return unc 
+#     print('com_term=',com_term,y,spin,epsilon) 
+    return None 
+
+def func_der(y,spin,epsilon): 
+    com_term = common(y,spin,epsilon) 
+    if com_term != None: 
+        dunk =y*(9*epsilon**3*spin**2*y - 48*epsilon**3*spin**2 + 36*epsilon**2*spin**2*y**4 - 150*epsilon**2*spin**2*y**3 \
+                   - 16*epsilon**2*spin*y**4*numpy.sqrt(com_term) 
+                   + 54*epsilon**2*y**6 - 288*epsilon**2*y**5 + 384*epsilon**2*y**4 - 48*epsilon*spin**2*y**6  
+                   - 32*epsilon*spin*y**7*numpy.sqrt(com_term) 
+                   - epsilon*y**9 * (com_term) 
+                   - 72*epsilon*y**8 + 192*epsilon*y**7  
+                   - 16*spin*y**10*numpy.sqrt(com_term)  
+                   - 4*y**12*(com_term)  
+                   + 6*y**11*(com_term)  
+                   +24*y**10 
+                  ) 
+        return dunk 
+    return None 
+
+def common(y,spin,epsilon): 
+    C = (9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y
+
+    if C>=0:
+        return C
+    return None
+
+def IterativeFunc(ran_mx,spin,epsilon, prec):
+    for i in range(len(ran_mx) -1):
+        d = common(ran_mx[i],spin,epsilon)
+        p = common(ran_mx[i+1],spin,epsilon)
+        if d is None or p is None:
+            return None
+        else:
+            if(func(ran_mx[i],spin,epsilon)*func(ran_mx[i+1],spin,epsilon) < 0.):
+                if (((ran_mx[i+1] - ran_mx[i])/2.) <= prec):
+                    b = ((ran_mx[i+1] + ran_mx[i])/2.)
+                    return b
+
+                else:
+                    ran_newx = numpy.linspace(ran_mx[i],ran_mx[i+1], 1000)
+                    ran_newmx = 0.5*(ran_newx[1::] + ran_newx[:-1:])
+                    return IterativeFunc(ran_newmx,spin,epsilon, prec)
+    return None
+
+
+
+def LR_pos(spin,epsilon):
+    prec = 1e-8
+    if epsilon >= -1:
+        ran_x = numpy.linspace(1.2,4., 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+    elif -10< epsilon < -1:
+        ran_x = numpy.linspace(2.,4.3, 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+    else:
+        ran_x = numpy.linspace(3.,5.5, 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+    return Rpos
+
+def freqM_dim_less(spin,epsilon): 
+    y = LR_pos(spin,epsilon)
+    if y != None:
+        com_term = common(y,spin,epsilon)#(9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
+
+    #     if com_term != None: 
+        frequ = 2*((-3*epsilon*y + 8*epsilon + 2*y**3)/(8*epsilon*spin + 2*spin*y**3 + y**5*numpy.sqrt(com_term)))
+
+        return frequ 
+    return 100 
+
+
+def gamma0(spin,epsilon): 
+    y = LR_pos(spin,epsilon)
+    if y != None:
+        com_term = common(y,spin,epsilon)#(9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
+    #     y = LR_pos(spin,epsilon)
+    #     if com_term != None: 
+        numerator = (54*epsilon**5*spin**6*y - 108*epsilon**5*spin**6 + 108*epsilon**4*spin**6*y**4- 270*epsilon**4*spin**6*y**3\
+                    + 24*epsilon**4*spin**5*y**4*numpy.sqrt(com_term) 
+                    + 117*epsilon**4*spin**4*y**6 - 480*epsilon**4*spin**4*y**5  
+                    + 496*epsilon**4*spin**4*y**4 + 54*epsilon**3*spin**6*y**7 - 216*epsilon**3*spin**6*y**6  
+                    + 36*epsilon**3*spin**5*y**7*numpy.sqrt(com_term) 
+                    -  6*epsilon**3*spin**4*y**9*(com_term) + 126*epsilon**3*spin**4*y**9  
+                    + 20*epsilon**3*spin**4*y**8*(com_term) 
+                    - 648*epsilon**3*spin**4*y**8 + 808*epsilon**3*spin**4*y**7  
+                    + 48*epsilon**3*spin**3*y**9*numpy.sqrt(com_term)  
+                    - 96*epsilon**3*spin**3*y**8*numpy.sqrt(com_term) 
+                    + 72*epsilon**3*spin**2*y**11 - 456*epsilon**3*spin**2*y**10 + 968*epsilon**3*spin**2*y**9  
+                    - 688*epsilon**3*spin**2*y**8 - 54*epsilon**2*spin**6*y**9  
+                    - 12*epsilon**2*spin**4*y**12*(com_term)+ 9*epsilon**2*spin**4*y**12 
+                    + 42*epsilon**2*spin**4*y**11*(com_term)  
+                    - 180*epsilon**2*spin**4*y**11 + 348*epsilon**2*spin**4*y**10  
+                    + 24*epsilon**2*spin**3*y**12*numpy.sqrt(com_term)  
+                    - 48*epsilon**2*spin**3*y**11*numpy.sqrt(com_term)  
+                    - 12*epsilon**2*spin**2*y**14*(com_term) + 18*epsilon**2*spin**2*y**14 
+                    + 64*epsilon**2*spin**2*y**13*(com_term) - 210*epsilon**2*spin**2*y**13  
+                    - 80*epsilon**2*spin**2*y**12*(com_term) + 648*epsilon**2*spin**2*y**12  
+                    - 600*epsilon**2*spin**2*y**11 + 24*epsilon**2*spin*y**14*numpy.sqrt(com_term)  
+                    - 96*epsilon**2*spin*y**13*numpy.sqrt(com_term)  
+                    + 96*epsilon**2*spin*y**12*numpy.sqrt(com_term)  
+                    + 9*epsilon**2*y**16 - 84*epsilon**2*y**15 + 292*epsilon**2*y**14  
+                    - 448*epsilon**2*y**13 + 256*epsilon**2*y**12  
+                    - 12*epsilon*spin**5*y**13*numpy.sqrt(com_term)  
+                    - 6*epsilon*spin**4*y**15* (com_term)  
+                    + 24*epsilon*spin**4*y**14*(com_term) - 12*epsilon*spin**4*y**14 
+                    + 40*epsilon*spin**4*y**13 - 24*epsilon*spin**3*y**15*numpy.sqrt(com_term) 
+                    + 48*epsilon*spin**3*y**14*numpy.sqrt(com_term)  
+                    - 12*epsilon*spin**2*y**17*(com_term)  
+                    + 68*epsilon*spin**2*y**16*(com_term) - 24*epsilon*spin**2*y**16 
+                    - 88*epsilon*spin**2*y**15*(com_term) + 120*epsilon*spin**2*y**15  
+                    - 144*epsilon*spin**2*y**14 - 12*epsilon*spin*y**17*numpy.sqrt(com_term) 
+                    + 48*epsilon*spin*y**16*numpy.sqrt(com_term) 
+                    - 48*epsilon*spin*y**15*numpy.sqrt(com_term)  
+                    - 6*epsilon*y**19*   (com_term)  
+                    + 44*epsilon*y**18*  (com_term) - 12*epsilon*y**18  
+                    - 104*epsilon*y**17* (com_term) + 80*epsilon*y**17 
+                    +  80*epsilon*y**16* (com_term) - 176*epsilon*y**16 + 128*epsilon*y**15 
+                    + 2*spin**4*y**17* (com_term) + 4*spin**4*y**16  
+                    + 4*spin**2*y**19* (com_term)  
+                    - 8*spin**2*y**18* (com_term) + 8*spin**2*y**18- 16*spin**2*y**17  
+                    + 2*y**21*(com_term)  
+                    - 8*y**20*(com_term) + 4*y**20  
+                    + 8*y**19*(com_term) - 16*y**19 + 16*y**18) 
+        denominator = (y**6*(4*epsilon**4*spin**2 + 16*epsilon**3*spin**2*y**3  
+                            + 4*epsilon**3*spin*y**5*numpy.sqrt(com_term)  
+                            - 8*epsilon**3*spin*y**4*numpy.sqrt(com_term)+ 24*epsilon**2*spin**2*y**6  
+                            + 12*epsilon**2*spin*y**8*numpy.sqrt(com_term)  
+                            - 24*epsilon**2*spin*y**7*numpy.sqrt(com_term)  
+                            + epsilon**2*y**10*(com_term) 
+                            - 4*epsilon**2*y**9*(com_term) 
+                            + 4*epsilon**2*y**8*(com_term) + 16*epsilon*spin**2*y**9 
+                            + 12*epsilon*spin*y**11*numpy.sqrt(com_term) 
+                            - 24*epsilon*spin*y**10*numpy.sqrt(com_term)  
+                            + 2*epsilon*y**13*(com_term) 
+                            - 8*epsilon*y**12*(com_term)  
+                            + 8*epsilon*y**11*(com_term) + 4*spin**2*y**12  
+                            + 4*spin*y**14*numpy.sqrt(com_term)  
+                            - 8*spin*y**13*numpy.sqrt(com_term)  
+                            + y**16*(com_term)  
+                            - 4*y**15*(com_term)  
+                            + 4*y**14*(com_term))) 
+
+    #         print(com_term,numerator,denominator,np.sqrt(numerator/denominator)) 
+        if (numerator/denominator) >= 0: 
+
+            gam = freqM_dim_less(spin,epsilon)*numpy.sqrt(numerator/denominator) 
+
+            return -1*(gam/4) 
+        return 100
+    return 100
+
+def frequency_in_hertz(mass, spin, epsilon, l, m, n): 
+    
+    return l*(freqM_dim_less(spin,epsilon))/(4*numpy.pi*mass*lal.MTSUN_SI) 
+
+def damping_in_seconds(mass, spin, epsilon, l, m, n): 
+    return -1*(mass*lal.MTSUN_SI)/(gamma0(spin,epsilon))
+
+def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
+    mass, spin, l, m, n, input_is_array = ensurearray(
+        mass, spin, l, m, n)
     # we'll ravel the arrays so we can evaluate each parameter combination
     # one at a a time
-    ########################################## complete expressions #########################################
-    
     getf0 = which == 'both' or which == 'f0'
     gettau = which == 'both' or which == 'tau'
     out = []
-    mass = mass*lal.MTSUN_SI
-    if spin>0:
-        a = spin*mass
-        r_K = 2*mass*(1 + numpy.cos((2/3)*numpy.arccos(-a/mass)))
-        w_K = (mass**(0.5))/((r_K**(1.5) + a*mass**(0.5)))
-
-
-        #w_K = (f1+f2*((1.-x)**f3))/(2*np.pi*m)
-        b_ph = 1/(w_K)
-        gam_ph = 2*(3*mass)**0.5 * ((r_K**2 -2*mass*r_K + (a)**2)*w_K) / (r_K**1.5*(r_K - mass))
-        
-        C1 = a + b_ph
-        C2 = a - b_ph
-
-        C0 = 27*mass**2*C2*(4*a + b_ph) + 2*C1**4
-
-        d_b1 = (54*mass**2*C2*C1**4 + C1**7) / (54* C2**2 * C0)
-
-        #d_b2 = (C1**7/(1944*C2**5*C0**3))*(78732*mass**6*C2**3*(29*a**2 +4*a*b_ph - b_ph**2) + 729*mass**4*C2**2*C1**3*(204*a**2 + 88*a*b_ph + b_ph**2) + 27*mass**2*C2*C1**6*(117*a**2 + 96*a*b_ph + 13*b_ph**2) + 2*C1**9*(11*a**2 + 14*a*b_ph + 4*b_ph**2))
-        
-        d_gam1 = (gam_ph**3)*((mass**4*C1**2*(27*mass**2*C2**2 + a*(a - 2*b_ph))/(2*C1**5 * C0*(3*mass**2*C2*(5*a - b_ph) + a**2*C1**2)**3)))*((C1**(10))*a**3*(4*a**2 - a*b_ph - 6*b_ph**2) + 729*mass**6*C2**3*C1**2*(364*a**4 - 227*a**3*b_ph - 201*a**2*b_ph**2 - 29*a*b_ph**3 + 13*b_ph**4) + 27*mass**4*C2**2*(2*a+b_ph)*(319*a**4 - 174*a**3*b_ph - 216*a**2*b_ph**2 - 38*a*b_ph**3 + 9*b_ph**4)*C1**4 + a*mass**2*C2*C1**7*(454*a**4 - 133*a**3*b_ph - 366*a**2*b_ph**2 - 182*a*b_ph**3 + 2*b_ph**4) + 78732*mass**8*C2**5*(5*a - b_ph)*(4*a + b_ph)) 
-
-        
-        #f0s= l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*numpy.pi)
-        f0s= l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon)/(2*numpy.pi)
-        taus = (2)/(gam_ph + epsilon*(d_gam1))
-        if taus>0 and f0s>0:
-            if getf0:
-                out.append(formatreturn(f0s, input_is_array))
-            if gettau:
-                out.append(formatreturn(taus, input_is_array))
-            if not (getf0 and gettau):
-                out = out[0]
-            return out
-        else:
-            f0s= numpy.zeros((1,)) #m*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*np.pi)
-            taus = abs(taus)#numpy.full((1,), numpy.inf) #(2)/(gam_ph + epsilon*(d_gam1))
-            if getf0:
-                out.append(formatreturn(f0s, input_is_array))
-            if gettau:
-                out.append(formatreturn(taus, input_is_array))
-            if not (getf0 and gettau):
-                out = out[0]
-            return out
-    else:
-        a = spin*mass
-        r_K = 2*mass*(1 + numpy.cos((2/3)*numpy.arccos(a/mass)))
-        w_K = (mass**(0.5))/((r_K**(1.5) - a*mass**(0.5)))
-
-        b_ph = 1/(w_K)
-        gam_ph = 2*(3*mass)**0.5 * ((r_K**2 -2*mass*r_K + (a)**2)*(w_K)) / (r_K**1.5*(r_K - mass))
-        
-        C1 = a + b_ph
-        C2 = a - b_ph
-        C0 = 27*mass**2*C2*(4*a + b_ph) + 2*C1**4
-
-        d_b1 = (54*mass**2*C2*C1**4 + C1**7) / (54* C2**2 * C0)
-
-        #d_b2 = (C1**7/(1944*C2**5*C0**3))*(78732*mass**6*C2**3*(29*a**2 +4*a*b_ph - b_ph**2) + 729*mass**4*C2**2*C1**3*(204*a**2 + 88*a*b_ph + b_ph**2) + 27*mass**2*C2*C1**6*(117*a**2 + 96*a*b_ph + 13*b_ph**2) + 2*C1**9*(11*a**2 + 14*a*b_ph + 4*b_ph**2))
-        
-        d_gam1 = (gam_ph**3)*((mass**4*C1**2*(27*mass**2*C2**2 + a*(a - 2*b_ph))/(2*C1**5 * C0*(3*mass**2*C2*(5*a - b_ph) + a**2*C1**2)**3)))*((C1**(10))*a**3*(4*a**2 - a*b_ph - 6*b_ph**2) + 729*mass**6*C2**3*C1**2*(364*a**4 - 227*a**3*b_ph - 201*a**2*b_ph**2 - 29*a*b_ph**3 + 13*b_ph**4) + 27*mass**4*C2**2*(2*a+b_ph)*(319*a**4 - 174*a**3*b_ph - 216*a**2*b_ph**2 - 38*a*b_ph**3 + 9*b_ph**4)*C1**4 + a*mass**2*C2*C1**7*(454*a**4 - 133*a**3*b_ph - 366*a**2*b_ph**2 - 182*a*b_ph**3 + 2*b_ph**4) + 78732*mass**8*C2**5*(5*a - b_ph)*(4*a + b_ph)) 
-        
-    
-        #f0s = -l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*numpy.pi)
-        f0s= l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon)/(2*numpy.pi)
-        taus = (2)/(gam_ph + epsilon*(d_gam1))
-        if taus>0 and f0s>0:
-            if getf0:
-                out.append(formatreturn(f0s, input_is_array))
-            if gettau:
-                out.append(formatreturn(taus, input_is_array))
-            if not (getf0 and gettau):
-                out = out[0]
-            return out
-        else:
-            f0s= numpy.zeros((1,)) #m*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*np. pi)
-            taus = abs(taus) #numpy.full((1,), numpy.inf) #(2)/(gam_ph + epsilon*(d_gam1))
-            if getf0:
-                out.append(formatreturn(f0s, input_is_array))
-            if gettau:
-                out.append(formatreturn(taus, input_is_array))
-            if not (getf0 and gettau):
-                out = out[0]
-            return out
-    ########################################## complete expressions ###################################################
-    #getf0 = which == 'both' or which == 'f0'
-    #gettau = which == 'both' or which == 'tau'
-    #out = []
-    #if getf0:
-    #    if m>0:
-    #        f0s = pykerr.qnmfreq(mass, spin, l, m, n) + ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass*lal.MTSUN_SI))
-     #       out.append(formatreturn(f0s, input_is_array))
-     #   else:
-     #       f0s = pykerr.qnmfreq(mass, spin, l, m, n) - ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*  spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass*lal.MTSUN_SI))
-      #      out.append(formatreturn(f0s, input_is_array))
-    #if gettau:
-    #    taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy.    sqrt(3))))/(mass*lal.MTSUN_SI)))
-     #   out.append(formatreturn(taus, input_is_array))
-        #if epsilon == 0. or spin == 0:
-        #    taus=pykerr.qnmtau(mass, spin, l, m, n)
-        #    out.append(formatreturn(taus, input_is_array))
-        #else:
-            #taus = pykerr.qnmtau(mass, spin, l, m, n) - 2.*numpy.pi*mass*lal.MTSUN_SI*(1/epsilon)*(2*n + 1)*(1/((spin)/(486.) + spin**2*(16.)/(2187.*numpy.sqrt(3))))
-        #taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy. sqrt(3))))/(mass*lal.MTSUN_SI)))
-    #if not (getf0 and gettau):
-    #    out = out[0]
-    #return out
-    #f0=(((f1+f2*((1.-spin)**f3)))/(2.*numpy.pi*mass) + (l*epsilon*((1/(81.*np.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass))/lal.MTSUN_SI
-    #tau = (((1/(2.*numpy.pi*mass))*(((f1 + f2*((1.-spin)**f3))*numpy.pi)/(q1 + q2*((1-spin)**q3)) - epsilon*((spin)/(486.) + (16.*spin**2)/(2187.*numpy.sqrt(3))))/lal.MTSUN_SI))**(-1)
-    #return f0, tau
-
+    if getf0:
+        f0s = frequency_in_hertz(mass,spin,epsilon, l, m, n)
+        out.append(formatreturn(f0s, input_is_array))
+    if gettau:
+        taus = damping_in_seconds(mass,spin,epsilon, l, m, n)
+        out.append(formatreturn(taus, input_is_array))
+    if not (getf0 and gettau):
+        out = out[0]
+    return out
 def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
     f0, tau = {}, {}
     for lmn in modes:
@@ -1106,6 +1172,154 @@ def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
             f0[key.format(l, abs(m), n)] = tmp_f0
             tau[key.format(l, abs(m), n)] = tmp_tau
     return f0, tau
+
+
+####################### JP Ringdown Functions end   #####################
+
+
+
+
+# def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
+#     #returns frequency and damping time for JP geometry
+#     #Only valid for n=0 modes
+#     #f1 = 1.5251
+#     #f2 = -1.1568
+#     #f3 = 0.1292
+
+#     #q1 = 0.7000
+#     #q2 = 1.4187
+#     #q3 = -0.4990
+#     # convert to arrays
+#     mass, spin, epsilon, l, m, n, input_is_array = ensurearray(
+#         mass, spin, epsilon, l, m, n)
+#     # we'll ravel the arrays so we can evaluate each parameter combination
+#     # one at a a time
+#     ########################################## complete expressions #########################################
+    
+#     getf0 = which == 'both' or which == 'f0'
+#     gettau = which == 'both' or which == 'tau'
+#     out = []
+#     mass = mass*lal.MTSUN_SI
+#     if spin>0:
+#         a = spin*mass
+#         r_K = 2*mass*(1 + numpy.cos((2/3)*numpy.arccos(-a/mass)))
+#         w_K = (mass**(0.5))/((r_K**(1.5) + a*mass**(0.5)))
+
+
+#         #w_K = (f1+f2*((1.-x)**f3))/(2*np.pi*m)
+#         b_ph = 1/(w_K)
+#         gam_ph = 2*(3*mass)**0.5 * ((r_K**2 -2*mass*r_K + (a)**2)*w_K) / (r_K**1.5*(r_K - mass))
+        
+#         C1 = a + b_ph
+#         C2 = a - b_ph
+
+#         C0 = 27*mass**2*C2*(4*a + b_ph) + 2*C1**4
+
+#         d_b1 = (54*mass**2*C2*C1**4 + C1**7) / (54* C2**2 * C0)
+
+#         #d_b2 = (C1**7/(1944*C2**5*C0**3))*(78732*mass**6*C2**3*(29*a**2 +4*a*b_ph - b_ph**2) + 729*mass**4*C2**2*C1**3*(204*a**2 + 88*a*b_ph + b_ph**2) + 27*mass**2*C2*C1**6*(117*a**2 + 96*a*b_ph + 13*b_ph**2) + 2*C1**9*(11*a**2 + 14*a*b_ph + 4*b_ph**2))
+        
+#         d_gam1 = (gam_ph**3)*((mass**4*C1**2*(27*mass**2*C2**2 + a*(a - 2*b_ph))/(2*C1**5 * C0*(3*mass**2*C2*(5*a - b_ph) + a**2*C1**2)**3)))*((C1**(10))*a**3*(4*a**2 - a*b_ph - 6*b_ph**2) + 729*mass**6*C2**3*C1**2*(364*a**4 - 227*a**3*b_ph - 201*a**2*b_ph**2 - 29*a*b_ph**3 + 13*b_ph**4) + 27*mass**4*C2**2*(2*a+b_ph)*(319*a**4 - 174*a**3*b_ph - 216*a**2*b_ph**2 - 38*a*b_ph**3 + 9*b_ph**4)*C1**4 + a*mass**2*C2*C1**7*(454*a**4 - 133*a**3*b_ph - 366*a**2*b_ph**2 - 182*a*b_ph**3 + 2*b_ph**4) + 78732*mass**8*C2**5*(5*a - b_ph)*(4*a + b_ph)) 
+
+        
+#         #f0s= l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*numpy.pi)
+#         f0s= l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon)/(2*numpy.pi)
+#         taus = (2)/(gam_ph + epsilon*(d_gam1))
+#         if taus>0 and f0s>0:
+#             if getf0:
+#                 out.append(formatreturn(f0s, input_is_array))
+#             if gettau:
+#                 out.append(formatreturn(taus, input_is_array))
+#             if not (getf0 and gettau):
+#                 out = out[0]
+#             return out
+#         else:
+#             f0s= numpy.zeros((1,)) #m*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*np.pi)
+#             taus = abs(taus)#numpy.full((1,), numpy.inf) #(2)/(gam_ph + epsilon*(d_gam1))
+#             if getf0:
+#                 out.append(formatreturn(f0s, input_is_array))
+#             if gettau:
+#                 out.append(formatreturn(taus, input_is_array))
+#             if not (getf0 and gettau):
+#                 out = out[0]
+#             return out
+#     else:
+#         a = spin*mass
+#         r_K = 2*mass*(1 + numpy.cos((2/3)*numpy.arccos(a/mass)))
+#         w_K = (mass**(0.5))/((r_K**(1.5) - a*mass**(0.5)))
+
+#         b_ph = 1/(w_K)
+#         gam_ph = 2*(3*mass)**0.5 * ((r_K**2 -2*mass*r_K + (a)**2)*(w_K)) / (r_K**1.5*(r_K - mass))
+        
+#         C1 = a + b_ph
+#         C2 = a - b_ph
+#         C0 = 27*mass**2*C2*(4*a + b_ph) + 2*C1**4
+
+#         d_b1 = (54*mass**2*C2*C1**4 + C1**7) / (54* C2**2 * C0)
+
+#         #d_b2 = (C1**7/(1944*C2**5*C0**3))*(78732*mass**6*C2**3*(29*a**2 +4*a*b_ph - b_ph**2) + 729*mass**4*C2**2*C1**3*(204*a**2 + 88*a*b_ph + b_ph**2) + 27*mass**2*C2*C1**6*(117*a**2 + 96*a*b_ph + 13*b_ph**2) + 2*C1**9*(11*a**2 + 14*a*b_ph + 4*b_ph**2))
+        
+#         d_gam1 = (gam_ph**3)*((mass**4*C1**2*(27*mass**2*C2**2 + a*(a - 2*b_ph))/(2*C1**5 * C0*(3*mass**2*C2*(5*a - b_ph) + a**2*C1**2)**3)))*((C1**(10))*a**3*(4*a**2 - a*b_ph - 6*b_ph**2) + 729*mass**6*C2**3*C1**2*(364*a**4 - 227*a**3*b_ph - 201*a**2*b_ph**2 - 29*a*b_ph**3 + 13*b_ph**4) + 27*mass**4*C2**2*(2*a+b_ph)*(319*a**4 - 174*a**3*b_ph - 216*a**2*b_ph**2 - 38*a*b_ph**3 + 9*b_ph**4)*C1**4 + a*mass**2*C2*C1**7*(454*a**4 - 133*a**3*b_ph - 366*a**2*b_ph**2 - 182*a*b_ph**3 + 2*b_ph**4) + 78732*mass**8*C2**5*(5*a - b_ph)*(4*a + b_ph)) 
+        
+    
+#         #f0s = -l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*numpy.pi)
+#         f0s= l*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon)/(2*numpy.pi)
+#         taus = (2)/(gam_ph + epsilon*(d_gam1))
+#         if taus>0 and f0s>0:
+#             if getf0:
+#                 out.append(formatreturn(f0s, input_is_array))
+#             if gettau:
+#                 out.append(formatreturn(taus, input_is_array))
+#             if not (getf0 and gettau):
+#                 out = out[0]
+#             return out
+#         else:
+#             f0s= numpy.zeros((1,)) #m*((1/b_ph) - ((2*d_b1)/(b_ph**2))*epsilon - ((b_ph*d_b2 - d_b1**2)/(b_ph**3))*2*epsilon**2)/(2*np. pi)
+#             taus = abs(taus) #numpy.full((1,), numpy.inf) #(2)/(gam_ph + epsilon*(d_gam1))
+#             if getf0:
+#                 out.append(formatreturn(f0s, input_is_array))
+#             if gettau:
+#                 out.append(formatreturn(taus, input_is_array))
+#             if not (getf0 and gettau):
+#                 out = out[0]
+#             return out
+#     ########################################## complete expressions ###################################################
+#     #getf0 = which == 'both' or which == 'f0'
+#     #gettau = which == 'both' or which == 'tau'
+#     #out = []
+#     #if getf0:
+#     #    if m>0:
+#     #        f0s = pykerr.qnmfreq(mass, spin, l, m, n) + ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass*lal.MTSUN_SI))
+#      #       out.append(formatreturn(f0s, input_is_array))
+#      #   else:
+#      #       f0s = pykerr.qnmfreq(mass, spin, l, m, n) - ((l*epsilon*((1/(81.*numpy.sqrt(3))+((10.*spin)/(729.))+((47.*  spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass*lal.MTSUN_SI))
+#       #      out.append(formatreturn(f0s, input_is_array))
+#     #if gettau:
+#     #    taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy.    sqrt(3))))/(mass*lal.MTSUN_SI)))
+#      #   out.append(formatreturn(taus, input_is_array))
+#         #if epsilon == 0. or spin == 0:
+#         #    taus=pykerr.qnmtau(mass, spin, l, m, n)
+#         #    out.append(formatreturn(taus, input_is_array))
+#         #else:
+#             #taus = pykerr.qnmtau(mass, spin, l, m, n) - 2.*numpy.pi*mass*lal.MTSUN_SI*(1/epsilon)*(2*n + 1)*(1/((spin)/(486.) + spin**2*(16.)/(2187.*numpy.sqrt(3))))
+#         #taus = 1 / ((1 /pykerr.qnmtau(mass, spin, l, m, n)) + ((epsilon*((spin)/(486.) + spin**2*(16.)/(2187.*numpy. sqrt(3))))/(mass*lal.MTSUN_SI)))
+#     #if not (getf0 and gettau):
+#     #    out = out[0]
+#     #return out
+#     #f0=(((f1+f2*((1.-spin)**f3)))/(2.*numpy.pi*mass) + (l*epsilon*((1/(81.*np.sqrt(3))+((10.*spin)/(729.))+((47.*spin**2)/(1458.*numpy.sqrt(3))))))/(2.*numpy.pi*mass))/lal.MTSUN_SI
+#     #tau = (((1/(2.*numpy.pi*mass))*(((f1 + f2*((1.-spin)**f3))*numpy.pi)/(q1 + q2*((1-spin)**q3)) - epsilon*((spin)/(486.) + (16.*spin**2)/(2187.*numpy.sqrt(3))))/lal.MTSUN_SI))**(-1)
+#     #return f0, tau
+
+# def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
+#     f0, tau = {}, {}
+#     for lmn in modes:
+#         key = '{}{}{}'
+#         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+#         for n in range(nmodes):
+#             tmp_f0, tmp_tau = get_JP_lm_f0tau(mass, spin,epsilon, l, m, n)
+#             f0[key.format(l, abs(m), n)] = tmp_f0
+#             tau[key.format(l, abs(m), n)] = tmp_tau
+#     return f0, tau
 
 def get_lm_f0tau_allmodes(mass, spin, modes):
     """Returns a dictionary of all of the frequencies and damping times for the
