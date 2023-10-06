@@ -1054,7 +1054,7 @@ def freqM_dim_less(spin,epsilon):
         frequ = 2*((-3*epsilon*y + 8*epsilon + 2*y**3)/(8*epsilon*spin + 2*spin*y**3 + y**5*numpy.sqrt(com_term)))
         
         return frequ 
-    return 100 
+    return 10 
 
 
 def gamma0(spin,epsilon): 
@@ -1134,8 +1134,8 @@ def gamma0(spin,epsilon):
             gam = freqM_dim_less(spin,epsilon)*numpy.sqrt(numerator/denominator) 
             
             return -1*(gam/4)
-        return 100
-    return 100
+        return -10
+    return -10
 
 def frequency_in_hertz(mass, spin, epsilon, l, m, n): 
     
