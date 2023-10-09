@@ -1031,22 +1031,31 @@ def IterativeFunc(ran_mx,spin,epsilon, prec):
 
 def LR_pos(spin,epsilon):
     prec = 1e-8
-    if -1 <= epsilon < 70:
-        ran_x = numpy.linspace(1.2,4., 1000)
-        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
-        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-    elif -10< epsilon < -1:
+    if -10.< epsilon < -1.:
         ran_x = numpy.linspace(2.,4.3, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-    elif epsilon >= 70:
-        ran_x = numpy.linspace(2.,2.5, 1000)
+    
+    elif -1. <= epsilon <= 65.:
+        ran_x = numpy.linspace(1.5,4., 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+
+    elif 65. < epsilon <= 80.:
+        ran_x = numpy.linspace(1.5,3.4, 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+        
+    elif 80. < epsilon <= 100.:
+        ran_x = numpy.linspace(1.75,3.4, 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+        
     else:
         ran_x = numpy.linspace(3.,5.5, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+        
     return Rpos
 
 def freqM_dim_less(spin,epsilon): 
@@ -1058,7 +1067,7 @@ def freqM_dim_less(spin,epsilon):
         frequ = 2*((-3*epsilon*y + 8*epsilon + 2*y**3)/(8*epsilon*spin + 2*spin*y**3 + y**5*numpy.sqrt(com_term)))
         
         return frequ 
-    return 10 
+    return 10
 
 
 def gamma0(spin,epsilon): 
@@ -1143,7 +1152,7 @@ def gamma0(spin,epsilon):
 
 def frequency_in_hertz(mass, spin, epsilon, l, m, n): 
     
-    return l*(freqM_dim_less(spin,epsilon)+ real_beta(spin,l))/(4*numpy.pi*mass*lal.MTSUN_SI) 
+    return m*(freqM_dim_less(spin,epsilon)+ real_beta(spin,l))/(4*numpy.pi*mass*lal.MTSUN_SI) 
 
 def damping_in_seconds(mass, spin, epsilon, l, m, n): 
     return -1*(mass*lal.MTSUN_SI)/(gamma0(spin,epsilon)-im_beta(spin,l))
@@ -1178,36 +1187,36 @@ def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
 
 def real_beta(spin,l):
     if l == 2:
-        a1,a2,a3,a4,a5,a6 = 0.1282,0.4178,0.6711,0.5037,1.8331,0.7596
+        a1,a2,a3,a4,a5,a6,err = 0.1282,0.4178,0.6711,0.5037,1.8331,0.7596,0.023
     elif l == 3:
-        a1,a2,a3,a4,a5,a6 = 0.1801, 0.5007,0.7064,0.5704,1.4690,0.7302
+        a1,a2,a3,a4,a5,a6,err = 0.1801, 0.5007,0.7064,0.5704,1.4690,0.7302, 0.005
     elif l == 4:
-        a1,a2,a3,a4,a5,a6 = 0.1974, 0.4982, 0.6808, 0.5958,1.4380, 0.7102
+        a1,a2,a3,a4,a5,a6,err = 0.1974, 0.4982, 0.6808, 0.5958,1.4380, 0.7102,0.011
     elif l == 5:
-        a1,a2,a3,a4,a5,a6 = 0.2083,0.4762, 0.6524, 0.6167, 1.4615, 0.6937
+        a1,a2,a3,a4,a5,a6,err = 0.2083,0.4762, 0.6524, 0.6167, 1.4615, 0.6937,0.016
     elif l == 6:
-        a1,a2,a3,a4,a5,a6 = 0.2167, 0.4458, 0.6235, 0.6373, 1.5103, 0.6791
+        a1,a2,a3,a4,a5,a6,err = 0.2167, 0.4458, 0.6235, 0.6373, 1.5103, 0.6791,0.021
     elif l == 7:
-        a1,a2,a3,a4,a5,a6 =0.2234, 0.4116, 0.5933, 0.6576, 1.5762, 0.6638
+        a1,a2,a3,a4,a5,a6,err =0.2234, 0.4116, 0.5933, 0.6576, 1.5762, 0.6638,0.025
         
-    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6))
+    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6)) + (err*1e-2)
 
 
 def im_beta(spin,l):
     if l == 2:
-        a1,a2,a3,a4,a5,a6 = 0.1381,0.3131,0.5531,0.8492,2.2159,0.8544
+        a1,a2,a3,a4,a5,a6,err = 0.1381,0.3131,0.5531,0.8492,2.2159,0.8544,0.004
     elif l == 3:
-        a1,a2,a3,a4,a5,a6 = 0.1590,0.3706,0.6643,0.6460,1.8889,0.6676
+        a1,a2,a3,a4,a5,a6,err = 0.1590,0.3706,0.6643,0.6460,1.8889,0.6676,0.008
     elif l == 4:
-        a1,a2,a3,a4,a5,a6 = 0.1575,0.3478,0.6577,0.5840,1.9799,0.6032
+        a1,a2,a3,a4,a5,a6,err = 0.1575,0.3478,0.6577,0.5840,1.9799,0.6032,0.009
     elif l == 5:
-        a1,a2,a3,a4,a5,a6 = 0.1225,0.1993,0.4855,0.6313,3.1018,0.6150
+        a1,a2,a3,a4,a5,a6,err = 0.1225,0.1993,0.4855,0.6313,3.1018,0.6150,1.335
     elif l == 6:
-        a1,a2,a3,a4,a5,a6 = 0.1280,0.1947,0.5081,0.6556,3.0960,0.6434
+        a1,a2,a3,a4,a5,a6,err = 0.1280,0.1947,0.5081,0.6556,3.0960,0.6434,0.665
     elif l == 7:
-        a1,a2,a3,a4,a5,a6 = -15.333,15.482,0.0011,0.3347,6.6258,0.2974
+        a1,a2,a3,a4,a5,a6,err = -15.333,15.482,0.0011,0.3347,6.6258,0.2974,0.874
 
-    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6))
+    return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6)) + (err*1e-2)
 
 
 ####################### JP Ringdown Functions end   #####################
