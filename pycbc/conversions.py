@@ -1055,7 +1055,6 @@ def LR_pos(spin,epsilon):
         ran_x = numpy.linspace(3.,5.5, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-        
     return Rpos
 
 def freqM_dim_less(spin,epsilon): 
