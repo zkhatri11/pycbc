@@ -1031,28 +1031,32 @@ def IterativeFunc(ran_mx,spin,epsilon, prec):
 
 def LR_pos(spin,epsilon):
     prec = 1e-8
-    if -10.< epsilon < -1. :
+    if  -10<epsilon<=-1:
         ran_x = numpy.linspace(2.,4.3, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-    
-    elif -1. <= epsilon <= 65. :
-        ran_x = numpy.linspace(1.5,4., 1000)
+    elif -1.<epsilon<=75.:
+        ran_x = numpy.linspace(1.50,4.0, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-
-    elif 65. < epsilon <= 80. :
-        ran_x = numpy.linspace(1.5,3.4, 1000)
+    elif 75.<epsilon<=105.:
+        ran_x = numpy.linspace(1.4,3.45, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-        
-    elif 80. < epsilon <= 100. :
-        ran_x = numpy.linspace(1.75,3.4, 1000)
+    elif 105.< epsilon <=170.:
+        ran_x = numpy.linspace(1.4,3.2, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
-        
+    elif 170.< epsilon <=280.:
+        ran_x = numpy.linspace(1.4,3.1, 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
+    elif 280.< epsilon <=300.:
+        ran_x = numpy.linspace(1.4,3.0, 1000)
+        ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
+        Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
     else:
-        ran_x = numpy.linspace(3.,5.5, 1000)
+        ran_x = numpy.linspace(3.,5, 1000)
         ran_mx = 0.5*(ran_x[1::] + ran_x[:-1:])
         Rpos = IterativeFunc(ran_mx,spin,epsilon,prec=prec)
     return Rpos
