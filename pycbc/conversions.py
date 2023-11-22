@@ -1063,13 +1063,16 @@ def LR_pos(spin,epsilon):
 
 
 
+
+
 def freqM_dim_less(spin,epsilon): 
     y = LR_pos(spin,epsilon)
     if y != None:
         com_term = common(y,spin,epsilon) #(9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
         frequ = 2*((-3*epsilon*y + 8*epsilon + 2*y**3)/(8*epsilon*spin + 2*spin*y**3 + y**5*numpy.sqrt(com_term)))
-        
-        return frequ 
+        if freq>0:
+            return frequ 
+        return 100
     return 100
 
 
@@ -1148,8 +1151,9 @@ def gamma0(spin,epsilon):
         if (numerator/denominator) >= 0: 
 
             gam = freqM_dim_less(spin,epsilon)*numpy.sqrt(numerator/denominator) 
-            
-            return -1*(gam/4)
+            if gam>=0:
+                return -1*(gam/4)
+            return -10
         return -10
     return -10
 
@@ -1159,34 +1163,6 @@ def frequency_in_hertz(mass, spin, epsilon, l, m, n):
 
 def damping_in_seconds(mass, spin, epsilon, l, m, n): 
     return -1*(mass*lal.MTSUN_SI)/(gamma0(spin,epsilon)+im_beta(spin,l))
-
-def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
-    mass, spin, l, m, n, input_is_array = ensurearray(
-        mass, spin, l, m, n)
-    # we'll ravel the arrays so we can evaluate each parameter combination
-    # one at a a time
-    getf0 = which == 'both' or which == 'f0'
-    gettau = which == 'both' or which == 'tau'
-    out = []
-    if getf0:
-        f0s = frequency_in_hertz(mass,spin,epsilon, l, m, n) 
-        out.append(formatreturn(f0s, input_is_array))
-    if gettau:
-        taus = damping_in_seconds(mass,spin,epsilon, l, m, n) 
-        out.append(formatreturn(taus, input_is_array))
-    if not (getf0 and gettau):
-        out = out[0]
-    return out
-def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
-    f0, tau = {}, {}
-    for lmn in modes:
-        key = '{}{}{}'
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            tmp_f0, tmp_tau = get_JP_lm_f0tau(mass, spin,epsilon, l, m, n)
-            f0[key.format(l, abs(m), n)] = tmp_f0
-            tau[key.format(l, abs(m), n)] = tmp_tau
-    return f0, tau
 
 def real_beta(spin,l):
     if l == 2:
@@ -1221,7 +1197,33 @@ def im_beta(spin,l):
 
     return a1 + a2*numpy.exp(-a3*(1-(spin))**a4) - (1/(a5 + (1-(spin))**a6)) + (err*1e-2)
 
-
+def get_JP_lm_f0tau(mass,spin,epsilon,l,m,n=0, which='both'):
+    mass, spin, l, m, n, input_is_array = ensurearray(
+        mass, spin, l, m, n)
+    # we'll ravel the arrays so we can evaluate each parameter combination
+    # one at a a time
+    getf0 = which == 'both' or which == 'f0'
+    gettau = which == 'both' or which == 'tau'
+    out = []
+    if getf0:
+        f0s = frequency_in_hertz(mass,spin,epsilon, l, m, n) 
+        out.append(formatreturn(f0s, input_is_array))
+    if gettau:
+        taus = damping_in_seconds(mass,spin,epsilon, l, m, n) 
+        out.append(formatreturn(taus, input_is_array))
+    if not (getf0 and gettau):
+        out = out[0]
+    return out
+def get_JP_lm_f0tau_allmodes(mass,spin,epsilon,modes):
+    f0, tau = {}, {}
+    for lmn in modes:
+        key = '{}{}{}'
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            tmp_f0, tmp_tau = get_JP_lm_f0tau(mass, spin,epsilon, l, m, n)
+            f0[key.format(l, abs(m), n)] = tmp_f0
+            tau[key.format(l, abs(m), n)] = tmp_tau
+    return f0, tau
 ####################### JP Ringdown Functions end   #####################
 
 
