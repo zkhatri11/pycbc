@@ -1070,7 +1070,7 @@ def freqM_dim_less(spin,epsilon):
     if y != None:
         com_term = common(y,spin,epsilon) #(9*epsilon**2*spin**2)/y**8 - 6*epsilon/y**3 + 16*epsilon/y**4 + 4/y 
         frequ = 2*((-3*epsilon*y + 8*epsilon + 2*y**3)/(8*epsilon*spin + 2*spin*y**3 + y**5*numpy.sqrt(com_term)))
-        if freq>0:
+        if frequ>0:
             return frequ 
         return 100
     return 100
